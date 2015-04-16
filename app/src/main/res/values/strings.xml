@@ -3,4 +3,6 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="input_hint">Enter the website</string>
+    <string name="text_url">http://techcrunch.com/2011/02/15/valve-makes-more-money-per-employee-than-google-or-apple/</string>
 </resources>
