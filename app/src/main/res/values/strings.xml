@@ -4,6 +4,6 @@
     <string name="preview">Preview</string>
     <string name="action_settings">Settings</string>
     <string name="input_hint">Enter the website</string>
-    <string name="text_url">http://techcrunch.com/2015/05/05/automated-savings-startup-digit-raises-11-3m-from-general-catalyst/</string>
+    <string name="text_url">http://goo.gl/MkdNXU</string><!--http://techcrunch.com/2015/05/05/automated-savings-startup-digit-raises-11-3m-from-general-catalyst/-->
     <string name="open_graph_protocol">Open Graph Protocol</string>
 </resources>

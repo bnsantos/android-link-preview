@@ -84,26 +84,12 @@ public class MainActivity extends ActionBarActivity {
             public void run() {
                 try {
                     Document doc = Jsoup.connect(mInput.getText().toString()).userAgent("Mozilla").get();
-                    StringBuffer description=new StringBuffer(), image= new StringBuffer(), author= new StringBuffer(), title = new StringBuffer(), type = new StringBuffer();
-                    for(Element meta : doc.select("meta")) {
-
-                        String name = meta.attr("name");
-                        String property = meta.attr("property");
-                        String content = meta.attr("content");
-                        Log.i(TAG,"Name: " + name + "- Property: " + property + " - Content: " + content);
-                        if(property!=null){
-                            if(property.equals(Constants.OpenGraphProtocol.OG_TITLE)) {
-                                title.append(content);
-                            }else if(property.equals(Constants.OpenGraphProtocol.OG_DESCRIPTION)) {
-                                description.append(content);
-                            }else if(property.equals(Constants.OpenGraphProtocol.OG_TYPE)) {
-                                type.append(content);
-                            }else if(property.equals(Constants.OpenGraphProtocol.OG_IMAGE)) {
-                                image.append(meta.attr(("content")));
-                            }
-                        }
-                    }
-                    update(title.toString(), author.toString(), description.toString().trim(), image.toString(), type.toString());
+                    String title = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_TITLE).attr("content");
+                    String description = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_DESCRIPTION).attr("content");
+                    String type = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_TYPE).attr("content");
+                    String author = doc.getElementsByAttributeValue("property", type + ":"+ Constants.AUTHOR).attr("content");
+                    String imageUrl = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_IMAGE).attr("content");
+                    update(title, author, description.trim(), imageUrl, type);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -120,7 +106,7 @@ public class MainActivity extends ActionBarActivity {
                 mDescription.setText(description);
                 mType.setText(type);
                 if(image!=null&&image.length()>0){
-                    Picasso.with(MainActivity.this).load(image).fit().into(mImage);
+                    Picasso.with(MainActivity.this).load(image).into(mImage);
                 }
             }
         });
