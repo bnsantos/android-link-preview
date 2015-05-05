@@ -5,8 +5,13 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,7 +25,9 @@ public class MainActivity extends ActionBarActivity {
     private TextView mTitle;
     private TextView mAuthor;
     private TextView mDescription;
-    private TextView mImageUrl;
+    private ImageView mImage;
+    private TextView mType;
+    private Button mPreview;
 
     private EditText mInput;
 
@@ -30,7 +37,12 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
-        preview();
+        mPreview.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                preview();
+            }
+        });
     }
 
 
@@ -61,7 +73,9 @@ public class MainActivity extends ActionBarActivity {
         mTitle = (TextView) findViewById(R.id.linkTitle);
         mAuthor = (TextView) findViewById(R.id.linkAuthor);
         mDescription = (TextView) findViewById(R.id.linkDescription);
-        mImageUrl = (TextView) findViewById(R.id.linkImageUrl);
+        mImage = (ImageView) findViewById(R.id.linkImage);
+        mType = (TextView) findViewById(R.id.linkType);
+        mPreview = (Button) findViewById(R.id.previewBtn);
     }
 
     private void preview(){
@@ -70,20 +84,26 @@ public class MainActivity extends ActionBarActivity {
             public void run() {
                 try {
                     Document doc = Jsoup.connect(mInput.getText().toString()).userAgent("Mozilla").get();
-                    StringBuffer description=new StringBuffer(), image= new StringBuffer(), author= new StringBuffer();
+                    StringBuffer description=new StringBuffer(), image= new StringBuffer(), author= new StringBuffer(), title = new StringBuffer(), type = new StringBuffer();
                     for(Element meta : doc.select("meta")) {
-                        Log.i(TAG,"Name: " + meta.attr("name") + " - Content: " + meta.attr("content"));
-                        if(meta.attr("name").contains("author")){
-                            author.append(meta.attr("content"));
-                        }else if(meta.attr("name").contains("description")){
-                            Log.i(TAG, "Description: "+ meta.attr("name"));
-                            description.append(meta.attr("content"));
-                        }else if(meta.attr("name").contains("image")){
-                            Log.i(TAG, "ImageURL: "+ meta.attr("name"));
-                            image.append(meta.attr("content"));
+
+                        String name = meta.attr("name");
+                        String property = meta.attr("property");
+                        String content = meta.attr("content");
+                        Log.i(TAG,"Name: " + name + "- Property: " + property + " - Content: " + content);
+                        if(property!=null){
+                            if(property.equals(Constants.OpenGraphProtocol.OG_TITLE)) {
+                                title.append(content);
+                            }else if(property.equals(Constants.OpenGraphProtocol.OG_DESCRIPTION)) {
+                                description.append(content);
+                            }else if(property.equals(Constants.OpenGraphProtocol.OG_TYPE)) {
+                                type.append(content);
+                            }else if(property.equals(Constants.OpenGraphProtocol.OG_IMAGE)) {
+                                image.append(meta.attr(("content")));
+                            }
                         }
                     }
-                    update(doc.title(), author.toString(), description.toString().trim(), image.toString());
+                    update(title.toString(), author.toString(), description.toString().trim(), image.toString(), type.toString());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -91,14 +111,17 @@ public class MainActivity extends ActionBarActivity {
         }).start();
     }
 
-    private void update(final String title, final String author, final String description, final String image){
+    private void update(final String title, final String author, final String description, final String image, final String type){
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mTitle.setText(title);
                 mAuthor.setText(author);
                 mDescription.setText(description);
-                mImageUrl.setText(image);
+                mType.setText(type);
+                if(image!=null&&image.length()>0){
+                    Picasso.with(MainActivity.this).load(image).fit().into(mImage);
+                }
             }
         });
     }

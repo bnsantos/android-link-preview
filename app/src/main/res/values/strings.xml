@@ -1,8 +1,9 @@
 <resources>
     <string name="app_name">LinkPreview</string>
 
-    <string name="hello_world">Hello world!</string>
+    <string name="preview">Preview</string>
     <string name="action_settings">Settings</string>
     <string name="input_hint">Enter the website</string>
-    <string name="text_url">http://techcrunch.com/2011/02/15/valve-makes-more-money-per-employee-than-google-or-apple/</string>
+    <string name="text_url">http://techcrunch.com/2015/05/05/automated-savings-startup-digit-raises-11-3m-from-general-catalyst/</string>
+    <string name="open_graph_protocol">Open Graph Protocol</string>
 </resources>
