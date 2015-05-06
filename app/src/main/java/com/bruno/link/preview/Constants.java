@@ -17,4 +17,13 @@ public class Constants {
         public static final String OG_DESCRIPTION = OG + DESCRIPTION;
         public static final String OG_IMAGE = OG + IMAGE;
     }
+
+    public static class TwitterCards{
+        public static final String TWITTER = "twitter:";
+        public static final String TWITTER_TITLE = TWITTER + TITLE;
+        public static final String TWITTER_DESCRIPTION = TWITTER + DESCRIPTION;
+        public static final String TWITTER_IMAGE = TWITTER + IMAGE;
+        public static final String TWITTER_IMAGE_SRC = TWITTER + IMAGE + ":src";
+        public static final String TWITTER_SITE = TWITTER + "site";
+    }
 }

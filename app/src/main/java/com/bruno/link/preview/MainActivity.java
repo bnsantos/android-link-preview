@@ -6,16 +6,20 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 
@@ -25,11 +29,14 @@ public class MainActivity extends ActionBarActivity {
     private TextView mTitle;
     private TextView mAuthor;
     private TextView mDescription;
+    private TextView mWebsite;
     private ImageView mImage;
-    private TextView mType;
     private Button mPreview;
 
-    private EditText mInput;
+    private Spinner mInput;
+
+    private ScrollView mScroll;
+    private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,12 +44,21 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.websites, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mInput.setAdapter(adapter);
         mPreview.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mScroll.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.VISIBLE);
                 preview();
             }
         });
+
+
+        mScroll.setVisibility(View.GONE);
+        mProgressBar.setVisibility(View.GONE);
     }
 
 
@@ -69,13 +85,16 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void initViews(){
-        mInput = (EditText) findViewById(R.id.input);
+        mInput = (Spinner) findViewById(R.id.input);
         mTitle = (TextView) findViewById(R.id.linkTitle);
         mAuthor = (TextView) findViewById(R.id.linkAuthor);
         mDescription = (TextView) findViewById(R.id.linkDescription);
         mImage = (ImageView) findViewById(R.id.linkImage);
-        mType = (TextView) findViewById(R.id.linkType);
         mPreview = (Button) findViewById(R.id.previewBtn);
+        mWebsite = (TextView) findViewById(R.id.linkWebsite);
+
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mScroll = (ScrollView) findViewById(R.id.scrollView);
     }
 
     private void preview(){
@@ -83,34 +102,85 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void run() {
                 try {
-                    Document doc = Jsoup.connect(mInput.getText().toString()).userAgent("Mozilla").get();
-                    String title = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_TITLE).attr("content");
-                    String description = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_DESCRIPTION).attr("content");
-                    String type = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_TYPE).attr("content");
-                    String author = doc.getElementsByAttributeValue("property", type + ":"+ Constants.AUTHOR).attr("content");
-                    String imageUrl = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_IMAGE).attr("content");
-                    update(title, author, description.trim(), imageUrl, type);
+                    Document doc = Jsoup.connect(mInput.getItemAtPosition(mInput.getSelectedItemPosition()).toString()).userAgent("Mozilla").get();
+                    updateViews(extractTitle(doc), extractDescription(doc), extractImageUrl(doc), extractAuthor(doc), extractWebsite(doc));
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Ops", e);
+                    show(R.string.error_unhandled_content);
                 }
             }
         }).start();
     }
 
-    private void update(final String title, final String author, final String description, final String image, final String type){
+    private String extractTitle(Document doc){
+        String title = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_TITLE).attr("content");
+        if(title==null||title.length()==0){
+            title = doc.getElementsByAttributeValue("name", Constants.TwitterCards.TWITTER_TITLE).attr("content");
+        }
+        if(title==null||title.length()==0){
+            title = doc.title();
+        }
+        return title;
+    }
+
+    private String extractDescription(Document doc){
+        String description = doc.getElementsByAttributeValue("name", Constants.DESCRIPTION).attr("content");
+        if(description==null||description.length()==0){
+            description = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_DESCRIPTION).attr("content");
+        }
+        if(description==null||description.length()==0){
+            description = doc.getElementsByAttributeValue("name", Constants.TwitterCards.TWITTER_DESCRIPTION).attr("content");
+        }
+        return description;
+    }
+
+    private String extractImageUrl(Document doc){
+        String imageUrl = doc.getElementsByAttributeValue("property", Constants.OpenGraphProtocol.OG_IMAGE).attr("content");
+        if(imageUrl==null||imageUrl.length()==0){
+            imageUrl = doc.getElementsByAttributeValue("name", Constants.TwitterCards.TWITTER_IMAGE).attr("content");
+            if(imageUrl!=null&&imageUrl.length()==0){
+                imageUrl = doc.getElementsByAttributeValue("name", Constants.TwitterCards.TWITTER_IMAGE_SRC).attr("content");
+            }
+        }
+        return imageUrl;
+    }
+
+    private String extractAuthor(Document doc){
+        return "";
+    }
+
+    private String extractWebsite(Document doc){
+        return doc.baseUri();
+    }
+
+    private void updateViews(final String title, final String description, final String imageUrl, final String author, final String website){
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mTitle.setText(title);
-                mAuthor.setText(author);
                 mDescription.setText(description);
-                mType.setText(type);
-                if(image!=null&&image.length()>0){
-                    Picasso.with(MainActivity.this).load(image).into(mImage);
+                if(imageUrl!=null&&imageUrl.length()>0){
+                    Picasso.with(MainActivity.this).load(imageUrl).into(mImage);
+                }else{
+                    mImage.setImageResource(android.R.color.transparent);
                 }
+                mAuthor.setText(author);
+                mWebsite.setText(website);
+                show(null);
             }
         });
     }
 
-
+    private void show(final Integer errorMessage){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mScroll.setVisibility(View.VISIBLE);
+                mProgressBar.setVisibility(View.GONE);
+                if(errorMessage!=null){
+                    Toast.makeText(getBaseContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
 }
